@@ -88,7 +88,8 @@ MOONSHINE NRF52 PIN ASSIGNMENT (RF-BM-ND05)
 #define PIN_SERIAL1_TX GPS_TX_PIN
 #define PIN_SERIAL1_RX GPS_RX_PIN
 
-// Serial2 (with hardware flow control: P0.12=RTS, P0.13=CTS)
+// Serial2 (P0.12/P0.13 are wired to RTS/CTS, but HW flow control is not enabled
+// by the Adafruit nRF52 core Serial2 singleton - these pins are unused by firmware)
 #define PIN_SERIAL2_RX (0 + 15) // P0.15
 #define PIN_SERIAL2_TX (0 + 14) // P0.14
 

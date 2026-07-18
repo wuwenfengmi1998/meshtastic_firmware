@@ -32,12 +32,17 @@ DIY Meshtastic node variant based on the RF-BM-ND05 nRF52840 module.
 | GPS_TX (MCU)  | P0.08 | Data from MCU to GNSS                  |
 | UART_TX       | P0.14 | Serial2                                |
 | UART_RX       | P0.15 | Serial2                                |
-| UART_RTS      | P0.12 | Serial2 flow control                   |
-| UART_CTS      | P0.13 | Serial2 flow control                   |
+| UART_RTS      | P0.12 | Serial2 flow control (see note)        |
+| UART_CTS      | P0.13 | Serial2 flow control (see note)        |
 
 Silkscreen GPS_TX/GPS_RX labels are from the GPS module perspective; Meshtastic
 macros (`GPS_TX_PIN` / `GPS_RX_PIN`) are from the MCU perspective, so they are
 swapped relative to the silkscreen.
+
+Note: P0.12/P0.13 are physically wired as RTS/CTS, but the Adafruit nRF52 core's
+`Serial2` singleton uses the 4-argument constructor (`uc_hwFlow = 0`), so
+hardware flow control is not enabled by firmware. These pins are unused unless
+the core is patched.
 
 ## Build
 
