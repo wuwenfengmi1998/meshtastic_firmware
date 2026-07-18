@@ -17,6 +17,7 @@ DIY Meshtastic node variant based on the RF-BM-ND05 nRF52840 module.
 | Function      | Pin   | Notes                                  |
 | ------------- | ----- | -------------------------------------- |
 | LED           | P0.30 | Active high (`LED_STATE_ON = 1`)       |
+| CHARGE_DET    | P0.16 | Active high (charging)                 |
 | BUTTON        | P0.27 | User button                            |
 | BUZZER        | P0.26 | PWM buzzer                             |
 | BATTERY_ADC   | P0.05 | 0.5 divider                            |
@@ -46,7 +47,9 @@ Note: P0.12/P0.13 are physically wired as RTS/CTS, but the Adafruit nRF52 core's
 hardware flow control is not enabled by firmware. These pins are unused unless
 the core is patched.
 
-## Build
+## Build & Flash
+
+### Build
 
 ```sh
 pio run -e moonshine_NRF52_node
@@ -60,7 +63,7 @@ start at `0x27000` and requires the S140 SoftDevice v7.x to be present on the
 chip at `0x0`-`0x26FFF`. The build output (`firmware-*.hex` / `.uf2`) contains
 **only the application**, not the SoftDevice.
 
-## Flash (first time on a bare RF-BM-ND05)
+### Flash (first time on a bare RF-BM-ND05)
 
 A factory-fresh RF-BM-ND05 module has **no SoftDevice and no bootloader**. The
 SoftDevice must be flashed once via SWD before the application; otherwise
@@ -74,7 +77,7 @@ the nRF52 CTRL-AP and clears APPROTECT, so it is the recommended first step on a
 fresh module (ebyte/Raytac modules ship with APPROTECT engaged).
 
 ```sh
-# Single-command flow: recover (erase all + unlock) -> SoftDevice -> app -> reset
+# Full flow: recover (erase all + unlock) -> SoftDevice -> app -> reset
 C:/openocd/bin/openocd.exe -s C:/openocd/share/openocd/scripts \
   -f interface/cmsis-dap.cfg -f target/nrf52.cfg \
   -c "init; nrf52_recover; \
@@ -83,8 +86,11 @@ C:/openocd/bin/openocd.exe -s C:/openocd/share/openocd/scripts \
       reset run; exit"
 ```
 
-If the chip is already unlocked and you only need to re-flash the application
-(SoftDevice already present), skip `nrf52_recover` and the SoftDevice line:
+### Flash (app only, SoftDevice already present)
+
+When the SoftDevice is already on the chip and only the application changed
+(e.g. after editing the variant and rebuilding), skip `nrf52_recover` and the
+SoftDevice line:
 
 ```sh
 C:/openocd/bin/openocd.exe -s C:/openocd/share/openocd/scripts \
@@ -94,16 +100,16 @@ C:/openocd/bin/openocd.exe -s C:/openocd/share/openocd/scripts \
       reset run; exit"
 ```
 
-Notes:
+### Notes
+
 - The firmware hex filename contains a commit hash (e.g. `2.8.0.421838f`); use
   the actual file produced by `pio run` or a shell glob.
 - The SoftDevice hex occupies `0x0`-`0x26498` (~156 KB) and does **not** write
   UICR, so `nrf52_recover` is safe (UICR resets to defaults).
 - Swap `interface/cmsis-dap.cfg` for `interface/jlink.cfg` or
   `interface/stlink.cfg` if using a different SWD probe.
-
-No UF2 bootloader is installed in this flow, so subsequent updates must go
-through BLE DFU (secure DFU service) or SWD again. To enable UF2 drag-and-drop
-updates, flash an Adafruit nRF52 UF2 bootloader
-(https://github.com/adafruit/Adafruit_nRF52_Bootloader) at `0x0` in place of the
-bare SoftDevice - the bootloader bundles its own SoftDevice.
+- No UF2 bootloader is installed in this flow, so subsequent updates must go
+  through BLE DFU (secure DFU service) or SWD again. To enable UF2 drag-and-drop
+  updates, flash an Adafruit nRF52 UF2 bootloader
+  (https://github.com/adafruit/Adafruit_nRF52_Bootloader) at `0x0` in place of
+  the bare SoftDevice - the bootloader bundles its own SoftDevice.

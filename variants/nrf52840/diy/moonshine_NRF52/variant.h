@@ -73,6 +73,10 @@ MOONSHINE NRF52 PIN ASSIGNMENT (RF-BM-ND05)
 #define LED_BLUE PIN_LED1
 #define LED_STATE_ON 1 // State when LED is lit (active high)
 
+// Charge detection (P0.16, active high = charging)
+#define EXT_CHRG_DETECT (0 + 16)
+#define EXT_CHRG_DETECT_VALUE HIGH
+
 // Buzzer
 #define PIN_BUZZER (0 + 26) // P0.26
 
