@@ -10,5 +10,6 @@
   },
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell"
-  }
+  },
+  "idf.currentSetup": "C:/Espressif/frameworks/esp-idf-v5.3.1/"
 }
