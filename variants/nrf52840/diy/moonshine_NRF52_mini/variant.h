@@ -24,7 +24,7 @@ MOONSHINE NRF52 MINI PIN ASSIGNMENT (minimal system: nRF52840 + RA-01S-P)
 | P0.02 | SPI MISO    | LORA_MISO                   |
 | P0.09 | LORA RESET  | SX126X_RESET                |
 | P0.10 | LORA DIO1   | SX126X_DIO1 (IRQ)           |
-| P0.13 | LED         | Status LED (active high)    |
+| P0.15 | LED         | Status LED (active high)    |
 | P0.17 | LORA RXEN   | SX126X_RXEN                 |
 | P0.29 | LORA BUSY   | SX126X_BUSY                 |
 | P1.11 | SPI SCK     | LORA_SCK                    |
@@ -41,8 +41,8 @@ MOONSHINE NRF52 MINI PIN ASSIGNMENT (minimal system: nRF52840 + RA-01S-P)
 // No dedicated 3V3 enable pin on this board
 #define PIN_3V3_EN (-1)
 
-// LED - status LED on P0.13 (active high)
-#define PIN_LED1 (0 + 13) // P0.13
+// LED - status LED on P0.15 (active high)
+#define PIN_LED1 (0 + 15) // P0.15
 #define LED_BLUE PIN_LED1
 #define LED_STATE_ON 1 // State when LED is lit (active high)
 

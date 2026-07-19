@@ -1,7 +1,7 @@
 # Moonshine NRF52 Mini
 
 Minimal DIY Meshtastic node variant: nRF52840 + RA-01S-P (SX1262) LoRa module
-with a single status LED on P0.13. No display, GPS, button, or battery ADC -
+with a single status LED on P0.15. No display, GPS, button, or battery ADC -
 LoRa-only minimal system.
 
 ## Hardware
@@ -12,7 +12,7 @@ LoRa-only minimal system.
   - `SX126X_MAX_POWER=22`
   - `TCXO_OPTIONAL` (no TCXO on module - firmware tries XTAL first)
   - DIO2 drives TXEN internally; RXEN is controlled by `P0.17`
-- **LED**: status LED on P0.13 (active high, `LED_STATE_ON = 1`)
+- **LED**: status LED on P0.15 (active high, `LED_STATE_ON = 1`)
 
 ## Pin map
 
@@ -21,14 +21,14 @@ LoRa-only minimal system.
 | SPI_MISO    | P0.02 | LORA_MISO                      |
 | LORA_RESET  | P0.09 | SX126X_RESET                   |
 | LORA_DIO1   | P0.10 | SX126X_DIO1 (IRQ)              |
-| LED         | P0.13 | Status LED (active high)       |
+| LED         | P0.15 | Status LED (active high)       |
 | LORA_RXEN   | P0.17 | SX126X_RXEN                    |
 | LORA_BUSY   | P0.29 | SX126X_BUSY                    |
 | SPI_SCK     | P1.11 | LORA_SCK                       |
 | LORA_CS     | P1.13 | SX126X_CS                      |
 | SPI_MOSI    | P1.15 | LORA_MOSI                      |
 
-Only the status LED on P0.13 is wired (no button, battery ADC, GPS, or display).
+Only the status LED on P0.15 is wired (no button, battery ADC, GPS, or display).
 The board has no user button, so DFU entry is via the 1200 bps touch or SWD.
 
 ## Build & Flash
