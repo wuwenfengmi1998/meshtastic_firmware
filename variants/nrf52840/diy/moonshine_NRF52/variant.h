@@ -111,21 +111,13 @@ MOONSHINE NRF52 PIN ASSIGNMENT (RF-BM-ND05)
 #define LORA_CS (0 + 29) // P0.29
 
 // LORA MODULES
-#define USE_LLCC68
-#define USE_SX1262
-#define USE_RF95
-#define USE_SX1268
-#define USE_LR1121
-#define USE_LR2021
+#define USE_SX1268 // E22-400M33S uses SX1268 (433MHz)
 
-// RF95 CONFIG
-#define LORA_DIO0 (0 + 22) // P0.22 BUSY
-#define LORA_DIO1 (0 + 21) // P0.21 IRQ
-#define LORA_RESET (0 + 23) // P0.23 NRST
-
-// RX/TX for RFM95/SX127x
-#define RF95_RXEN (0 + 11)    // P0.11
-#define RF95_TXEN RADIOLIB_NC // Assuming that DIO2 is connected to TXEN pin. If not, TXEN must be connected.
+// E22-400M33S: 33dBm/2W module with ~25dB PA gain
+// SX1268 outputs 8dBm -> PA -> 33dBm (2W)
+// 22dBm default would overdrive PA to ~47dBm, causing current spikes and system reset
+#define SX126X_MAX_POWER 8
+#define TX_GAIN_LORA 25
 
 // SX126X CONFIG
 #define SX126X_CS (0 + 29)       // P0.29 FIXME - we really should define LORA_CS instead
@@ -136,32 +128,6 @@ MOONSHINE NRF52 PIN ASSIGNMENT (RF-BM-ND05)
 #define SX126X_RESET (0 + 23)    // P0.23
 #define SX126X_RXEN (0 + 11)     // P0.11
 #define SX126X_TXEN RADIOLIB_NC  // Assuming that DIO2 is connected to TXEN pin. If not, TXEN must be connected.
-
-// LR1121
-#ifdef USE_LR1121
-#define LR1121_IRQ_PIN (0 + 21)      // P0.21 IRQ
-#define LR1121_NRESET_PIN LORA_RESET // P0.23 NRST
-#define LR1121_BUSY_PIN (0 + 22)     // P0.22 BUSY
-#define LR1121_SPI_NSS_PIN LORA_CS   // P0.29
-#define LR1121_SPI_SCK_PIN LORA_SCK
-#define LR1121_SPI_MOSI_PIN LORA_MOSI
-#define LR1121_SPI_MISO_PIN LORA_MISO
-#define LR11X0_DIO3_TCXO_VOLTAGE 1.8
-#define LR11X0_DIO_AS_RF_SWITCH
-#endif
-
-// LR2021
-#ifdef USE_LR2021
-#define LR2021_IRQ_PIN (0 + 21)      // P0.21 IRQ
-#define LR2021_NRESET_PIN LORA_RESET // P0.23 NRST
-#define LR2021_BUSY_PIN (0 + 22)     // P0.22 BUSY
-#define LR2021_SPI_NSS_PIN LORA_CS   // P0.29
-#define LR2021_DIO3_TCXO_VOLTAGE 1.8
-#define LR2021_DIO_AS_RF_SWITCH
-#define LR2021_IRQ_DIO_NUM 9 // DIO9 -> P0.21
-#endif
-
-// #define SX126X_MAX_POWER 8 set this if using a high-power board!
 
 #define SX126X_DIO3_TCXO_VOLTAGE 1.8
 #define TCXO_OPTIONAL // make it so that the firmware can try both TCXO and XTAL
