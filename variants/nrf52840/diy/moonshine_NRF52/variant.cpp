@@ -22,6 +22,13 @@
 #include "nrf.h"
 #include "wiring_constants.h"
 #include "wiring_digital.h"
+#include "SEGGER_RTT.h"
+
+extern "C" {
+#include "nrf_soc.h"
+}
+
+static bool pofcon_disabled = false;
 
 const uint32_t g_ADigitalPinMap[] = {
     // P0
@@ -32,7 +39,22 @@ const uint32_t g_ADigitalPinMap[] = {
 
 void initVariant()
 {
-    // No dedicated 3V3 enable pin on this board
+    // Configure P0.18 as RESET pin (UICR->PSELRESET).
+    // nrf52_recover (ERASEALL) clears UICR to 0xFFFFFFFF, disabling reset.
+    // SystemInit() should do this via CONFIG_GPIO_AS_PINRESET, but that code path
+    // is not compiled in by the Adafruit core. Write UICR directly here - this
+    // runs before SoftDevice is enabled, so NVMC is accessible.
+    if ((NRF_UICR->PSELRESET[0] != 18) || (NRF_UICR->PSELRESET[1] != 18)) {
+        NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos;
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {}
+        NRF_UICR->PSELRESET[0] = 18;
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {}
+        NRF_UICR->PSELRESET[1] = 18;
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {}
+        NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos;
+        while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {}
+        NVIC_SystemReset(); // Reboot to apply PSELRESET (hardware reconfigures P0.18)
+    }
 }
 
 void variant_shutdown()
@@ -40,4 +62,25 @@ void variant_shutdown()
     nrf_gpio_cfg_input(BUTTON_PIN, NRF_GPIO_PIN_PULLUP); // Enable internal pull-up on the button pin
     nrf_gpio_pin_sense_t sense = NRF_GPIO_PIN_SENSE_LOW; // Configure SENSE signal on low edge
     nrf_gpio_cfg_sense_set(BUTTON_PIN, sense);           // Apply SENSE to wake up the device from the deep sleep
+}
+
+void variant_nrf52LoopHook(void)
+{
+    // Debug: toggle P0.11 to confirm this hook is called
+    static bool initialized = false;
+    if (!initialized) {
+        nrf_gpio_cfg_output(11);
+        initialized = true;
+    }
+    nrf_gpio_pin_toggle(11);
+
+    // Disable POFCON via SoftDevice API - direct NRF_POWER->POFCON writes are
+    // ignored once SoftDevice is enabled. E22-400M33S TX causes transient VDD
+    // drops that trigger POFWARN -> lfs_assert -> NVIC_SystemReset.
+    static uint32_t retry_count = 0;
+    if (retry_count < 3) {
+        uint32_t ret = sd_power_pof_enable(0);
+        SEGGER_RTT_printf(0, "variant_loop: ret=%d POFCON=0x%x\r\n", ret, NRF_POWER->POFCON);
+        retry_count++;
+    }
 }

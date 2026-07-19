@@ -114,10 +114,13 @@ MOONSHINE NRF52 PIN ASSIGNMENT (RF-BM-ND05)
 #define USE_SX1268 // E22-400M33S uses SX1268 (433MHz)
 
 // E22-400M33S: 33dBm/2W module with ~25dB PA gain
-// SX1268 outputs 8dBm -> PA -> 33dBm (2W)
+// SX1268 outputs 2dBm -> PA -> 27dBm (~500mW), reduced PA current to avoid BOD reset
 // 22dBm default would overdrive PA to ~47dBm, causing current spikes and system reset
-#define SX126X_MAX_POWER 8
+#define SX126X_MAX_POWER 2
 #define TX_GAIN_LORA 25
+
+// PA ramp time: 3400us (default 200us), reduce transient current spikes during TX
+#define SX126X_PA_RAMP_US 0x07
 
 // SX126X CONFIG
 #define SX126X_CS (0 + 29)       // P0.29 FIXME - we really should define LORA_CS instead
@@ -126,8 +129,7 @@ MOONSHINE NRF52 PIN ASSIGNMENT (RF-BM-ND05)
                                  // so it needs connecting externally if it is used in this way
 #define SX126X_BUSY (0 + 22)     // P0.22
 #define SX126X_RESET (0 + 23)    // P0.23
-#define SX126X_RXEN (0 + 11)     // P0.11
-#define SX126X_TXEN RADIOLIB_NC  // Assuming that DIO2 is connected to TXEN pin. If not, TXEN must be connected.
+#define SX126X_TXEN RADIOLIB_NC  // DIO2 controls TXEN directly; RXEN left floating (module default)
 
 #define SX126X_DIO3_TCXO_VOLTAGE 1.8
 #define TCXO_OPTIONAL // make it so that the firmware can try both TCXO and XTAL

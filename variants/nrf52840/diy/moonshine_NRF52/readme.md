@@ -8,9 +8,11 @@ DIY Meshtastic node variant based on the RF-BM-ND05 nRF52840 module.
 - **LF clock**: internal RC (`USE_LFRC`) - RF-BM-ND05 has no 32.768 kHz crystal; using
   `USE_LFXO` without a crystal makes SoftDevice hang in `RTC1_IRQHandler` waiting
   for LFCLK, causing LED-stuck-on and silent BLE failure.
-- **LoRa**: E22-400M33S (SX1268 + 33dBm PA, 2W, 433MHz) - `SX126X_MAX_POWER=8`,
-  `TX_GAIN_LORA=25` required (22dBm default overdrives PA to ~47dBm, causing current
-  spikes and system reset even at low tx_power settings)
+- **LoRa**: E22-400M33S (SX1268 + 33dBm PA, 2W, 433MHz) - `SX126X_MAX_POWER=2`,
+  `TX_GAIN_LORA=25`, `SX126X_PA_RAMP_US=0x07` (3400us ramp). PA has no enable pin
+  and draws high transient current on TX; default 22dBm/200us-ramp causes BOD reset.
+  POFCON disabled in `variant_nrf52LoopHook()` to prevent POFWARN -> lfs_assert
+  -> reboot chain.
 - **GPS**: u-blox (no EN pin)
 - **Battery ADC**: 0.5 voltage divider (equal resistors)
 
