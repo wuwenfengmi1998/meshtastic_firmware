@@ -28,8 +28,6 @@ extern "C" {
 #include "nrf_soc.h"
 }
 
-static bool pofcon_disabled = false;
-
 const uint32_t g_ADigitalPinMap[] = {
     // P0
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
@@ -41,9 +39,8 @@ void initVariant()
 {
     // Configure P0.18 as RESET pin (UICR->PSELRESET).
     // nrf52_recover (ERASEALL) clears UICR to 0xFFFFFFFF, disabling reset.
-    // SystemInit() should do this via CONFIG_GPIO_AS_PINRESET, but that code path
-    // is not compiled in by the Adafruit core. Write UICR directly here - this
-    // runs before SoftDevice is enabled, so NVMC is accessible.
+    // SystemInit() already handles this via CONFIG_GPIO_AS_PINRESET; this is a
+    // safety net that runs before SoftDevice is enabled, so NVMC is accessible.
     if ((NRF_UICR->PSELRESET[0] != 18) || (NRF_UICR->PSELRESET[1] != 18)) {
         NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos;
         while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {}
@@ -66,21 +63,12 @@ void variant_shutdown()
 
 void variant_nrf52LoopHook(void)
 {
-    // Debug: toggle P0.11 to confirm this hook is called
-    static bool initialized = false;
-    if (!initialized) {
-        nrf_gpio_cfg_output(11);
-        initialized = true;
-    }
-    nrf_gpio_pin_toggle(11);
-
     // Disable POFCON via SoftDevice API - direct NRF_POWER->POFCON writes are
     // ignored once SoftDevice is enabled. E22-400M33S TX causes transient VDD
     // drops that trigger POFWARN -> lfs_assert -> NVIC_SystemReset.
-    static uint32_t retry_count = 0;
-    if (retry_count < 3) {
-        uint32_t ret = sd_power_pof_enable(0);
-        SEGGER_RTT_printf(0, "variant_loop: ret=%d POFCON=0x%x\r\n", ret, NRF_POWER->POFCON);
-        retry_count++;
+    // SoftDevice may re-enable POFCON during BLE events, so check every iteration.
+    if (NRF_POWER->POFCON & (1 << POWER_POFCON_POF_Pos)) {
+        sd_power_pof_enable(0);
+        SEGGER_RTT_printf(0, "variant_loop: POFCON re-enabled, disabling (POFCON=0x%x)\r\n", NRF_POWER->POFCON);
     }
 }

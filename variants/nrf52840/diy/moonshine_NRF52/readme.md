@@ -11,8 +11,9 @@ DIY Meshtastic node variant based on the RF-BM-ND05 nRF52840 module.
 - **LoRa**: E22-400M33S (SX1268 + 33dBm PA, 2W, 433MHz) - `SX126X_MAX_POWER=2`,
   `TX_GAIN_LORA=25`, `SX126X_PA_RAMP_US=0x07` (3400us ramp). PA has no enable pin
   and draws high transient current on TX; default 22dBm/200us-ramp causes BOD reset.
-  POFCON disabled in `variant_nrf52LoopHook()` to prevent POFWARN -> lfs_assert
-  -> reboot chain.
+  `SX126X_RXEN` (P0.11) is MCU-controlled by RadioLib; TXEN is driven by DIO2
+  (`SX126X_DIO2_AS_RF_SWITCH`). POFCON is continuously disabled in
+  `variant_nrf52LoopHook()` to prevent POFWARN -> lfs_assert -> reboot chain.
 - **GPS**: u-blox (no EN pin)
 - **Battery ADC**: 0.5 voltage divider (equal resistors)
 
@@ -34,7 +35,7 @@ DIY Meshtastic node variant based on the RF-BM-ND05 nRF52840 module.
 | LORA_DIO1     | P0.21 | IRQ                                    |
 | LORA_BUSY     | P0.22 |                                        |
 | LORA_RESET    | P0.23 |                                        |
-| LORA_RXEN     | P0.11 | TXEN tied to DIO2 internally           |
+| LORA_RXEN     | P0.11 | MCU-controlled RXEN; TXEN via DIO2     |
 | GPS_RX (MCU)  | P0.07 | Data from GNSS to MCU                  |
 | GPS_TX (MCU)  | P0.08 | Data from MCU to GNSS                  |
 | UART_TX       | P0.14 | Serial2                                |

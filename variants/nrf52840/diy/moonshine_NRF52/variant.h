@@ -129,7 +129,8 @@ MOONSHINE NRF52 PIN ASSIGNMENT (RF-BM-ND05)
                                  // so it needs connecting externally if it is used in this way
 #define SX126X_BUSY (0 + 22)     // P0.22
 #define SX126X_RESET (0 + 23)    // P0.23
-#define SX126X_TXEN RADIOLIB_NC  // DIO2 controls TXEN directly; RXEN left floating (module default)
+#define SX126X_RXEN (0 + 11)     // P0.11 - E22 RXEN, MCU controls RX/TX RF switch path
+#define SX126X_TXEN RADIOLIB_NC  // DIO2 controls TXEN directly
 
 #define SX126X_DIO3_TCXO_VOLTAGE 1.8
 #define TCXO_OPTIONAL // make it so that the firmware can try both TCXO and XTAL
