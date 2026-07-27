@@ -70,12 +70,15 @@ const StoredMessage *getNewestMessageForActiveThread()
     const uint32_t peer = graphics::MessageRenderer::getThreadPeer();
     const uint32_t localNode = nodeDB->getNodeNum();
 
-    if (mode == graphics::MessageRenderer::ThreadMode::ALL) {
-        return &messages.back();
-    }
-
     for (auto it = messages.rbegin(); it != messages.rend(); ++it) {
         const StoredMessage &m = *it;
+        if (!messageStore.isMessageVisible(m)) {
+            continue;
+        }
+
+        if (mode == graphics::MessageRenderer::ThreadMode::ALL) {
+            return &m;
+        }
 
         if (mode == graphics::MessageRenderer::ThreadMode::CHANNEL) {
             if (m.type == MessageType::BROADCAST && static_cast<int>(m.channelIndex) == channel) {
@@ -282,21 +285,19 @@ void menuHandler::LoraRegionPicker(uint32_t duration)
                 return;
             }
 
-            // Guard: without a reboot, reconfigure() applies the region directly, so reject
-            // regions this node can't use up front: unrecognized codes, licensed-only regions,
-            // and radio hardware mismatches (2.4 GHz vs sub-GHz) - the same checks the admin
-            // set-config path applies, but side-effect-free: ignoring a menu selection should
-            // not record a critical error or notify clients. getRadio() used to catch hardware
-            // mismatches post-reboot only.
+            const RegionInfo *selectedRegionInfo = getRegion(selectedRegion);
+            bool hamMode = selectedRegionInfo->code == selectedRegion && selectedRegionInfo->profile &&
+                           selectedRegionInfo->profile->licensedOnly;
+
+            // Validate radio compatibility for a prospective Ham region before confirmation.
             auto candidateLora = config.lora;
             candidateLora.region = selectedRegion;
-            char regionErr[160];
-            if (!RadioInterface::checkConfigRegion(candidateLora, regionErr, sizeof(regionErr))) {
+            char regionErr[160] = {};
+            if (!RadioInterface::checkConfigRegion(candidateLora, regionErr, sizeof(regionErr), hamMode)) {
                 LOG_WARN("Ignoring region selection: %s", regionErr);
                 return;
             }
 
-            bool hamMode = getRegion(selectedRegion)->profile->licensedOnly;
             if (hamMode) {
                 LOG_INFO("User chose an amateur radio mode region");
                 pendingRegion = selectedRegion;
