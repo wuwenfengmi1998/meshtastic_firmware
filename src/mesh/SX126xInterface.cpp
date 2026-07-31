@@ -3,6 +3,7 @@
 #include "configuration.h"
 #include "error.h"
 #include "mesh/NodeDB.h"
+#include "meshUtils.h" // for pow_of_2
 #ifdef ARCH_PORTDUINO
 #include "PortduinoGlue.h"
 #endif
@@ -191,12 +192,28 @@ template <typename T> bool SX126xInterface<T>::reconfigure()
 
     // configure publicly accessible settings
     int err = lora.setSpreadingFactor(sf);
-    if (err != RADIOLIB_ERR_NONE)
-        RECORD_CRITICALERROR(meshtastic_CriticalErrorCode_INVALID_RADIO_SETTING);
+    if (err != RADIOLIB_ERR_NONE) {
+        LOG_ERROR("SX126X setSpreadingFactor(%d) at BW %.1f kHz rejected (%s%d), attempting fallback", sf, bw, radioLibErr, err);
+        for (uint8_t fallbackSf = sf - 1; fallbackSf >= 5; fallbackSf--) {
+            err = lora.setSpreadingFactor(fallbackSf);
+            if (err == RADIOLIB_ERR_NONE) {
+                LOG_WARN("SX126X fell back to SF%d at BW %.1f kHz (requested SF%d), change modem preset to match", fallbackSf, bw,
+                         sf);
+                this->sf = fallbackSf;
+                preambleTimeMsec = preambleLength * (pow_of_2(sf) / bw);
+                slotTimeMsec = computeSlotTimeMsec();
+                break;
+            }
+        }
+        if (err != RADIOLIB_ERR_NONE)
+            RECORD_CRITICALERROR(meshtastic_CriticalErrorCode_INVALID_RADIO_SETTING);
+    }
 
     err = lora.setBandwidth(bw);
-    if (err != RADIOLIB_ERR_NONE)
+    if (err != RADIOLIB_ERR_NONE) {
+        LOG_ERROR("SX126X setBandwidth(%.1f) rejected (%s%d)", bw, radioLibErr, err);
         RECORD_CRITICALERROR(meshtastic_CriticalErrorCode_INVALID_RADIO_SETTING);
+    }
 
     err = lora.setCodingRate(cr);
     if (err != RADIOLIB_ERR_NONE)
