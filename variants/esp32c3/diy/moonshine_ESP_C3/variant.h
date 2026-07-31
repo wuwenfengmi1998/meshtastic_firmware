@@ -41,20 +41,22 @@ extern "C" {
 
 #ifdef E220_400M33S
 // LoRa - E220-400M33S (LLCC68, 433MHz, 33dBm/2W module with PA)
-#define USE_LLCC68
+
 #define TX_GAIN_LORA 11
 #define SX126X_MAX_POWER 22
 #endif
 
 #ifdef E22_400M33S
 // LoRa - E22-400M33S (SX1268, 433MHz, 33dBm/2W module with PA)
-#define USE_SX1268
+
 #define NUM_PA_POINTS 1
 #define TX_GAIN_LORA 25
 #define SX126X_MAX_POWER 8
 #endif
 
-
+#define USE_LLCC68
+#define USE_SX1262
+#define USE_SX1268
 
 #define LORA_SCK 10
 #define LORA_MISO 6
