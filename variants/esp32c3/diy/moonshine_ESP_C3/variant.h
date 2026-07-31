@@ -34,7 +34,6 @@ extern "C" {
 
 #ifdef E220_400M30S
 // LoRa - E220-400M30S (LLCC68, 433MHz, 30dBm/1W module with PA)
-#define USE_LLCC68
 #define TX_GAIN_LORA 8
 #define SX126X_MAX_POWER 22
 #endif
