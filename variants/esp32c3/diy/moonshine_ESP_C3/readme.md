@@ -1,35 +1,46 @@
 # Moonshine ESP-C3
 
-DIY Meshtastic node variant based on the ESP32-C3 + E22-400M33S LoRa module.
+DIY Meshtastic node variant based on the ESP32-C3 + EBYTE 433 MHz LoRa module.
 
 ## Hardware
 
 - **MCU**: ESP32-C3 with 4 MB external SPI flash
-- **LoRa**: E22-400M33S (SX1268 + 33 dBm PA, 2 W, 433 MHz)
+- **LoRa**: one of three EBYTE 433 MHz modules (see [LoRa module selection](#lora-module-selection))
 - **USB CDC**: enabled (`ARDUINO_USB_MODE=1`, `ARDUINO_USB_CDC_ON_BOOT=1`) -
   serial console is exposed via the USB CDC port, no separate UART chip
 - **Battery ADC**: 0.5 voltage divider on GPIO1 (`ADC_MULTIPLIER = 2.0`)
 - **No screen, no GPS** on this board
 
-### E22-400M33S power note
+## LoRa module selection
 
-The E22-400M33S is a 33 dBm / 2 W module with ~25 dB PA gain. This variant
-uses the firmware's default SX126x output power (22 dBm), which the E22's PA
-amplifies to ~47 dBm. **This will overdrive the PA, cause large current spikes,
-and may reset the system** at higher `tx_power` settings.
-
-For safe operation on the E22-400M33S, add the following to `variant.h`:
+This board supports three EBYTE 433 MHz LoRa modules. Select the module by
+commenting/uncommenting the `#define` lines at the top of `variant.h`:
 
 ```cpp
-#define SX126X_MAX_POWER 8   // SX1268 outputs 8 dBm -> PA -> ~33 dBm
-#define TX_GAIN_LORA 25      // PA gain compensation
+#define E220_400M30S
+//#define E220_400M33S
+//#define E22_400M33S
 ```
 
-These are intentionally omitted here per the board designer's request; the
-operator is responsible for setting an appropriate `tx_power` in app config
-or patching the variant before flashing. See
-`variants/nrf52840/diy/moonshine_NRF52/variant.h` for the same module wired
-with the PA-safe power profile.
+Only one module should be enabled at a time.
+
+| Module       | Chip   | Power        | `USE_*`      | `TX_GAIN_LORA` | `SX126X_MAX_POWER` | Total output    |
+| ------------ | ------ | ------------ | ------------ | -------------- | ------------------ | --------------- |
+| E220-400M30S | LLCC68 | 30 dBm (1 W) | `USE_LLCC68` | 8              | 22                 | 22 + 8 = 30 dBm |
+| E220-400M33S | LLCC68 | 33 dBm (2 W) | `USE_LLCC68` | 11             | 22                 | 22 + 11 = 33 dBm |
+| E22-400M33S  | SX1268 | 33 dBm (2 W) | `USE_SX1268` | 25             | 8                  | 8 + 25 = 33 dBm  |
+
+### E22-400M33S power note
+
+The E22-400M33S has a high-gain PA (~25 dB). The variant limits the SX1268
+chip output to 8 dBm (`SX126X_MAX_POWER = 8`), which the PA amplifies to
+~33 dBm. Do **not** raise `SX126X_MAX_POWER` above 8 without verifying
+actual PA output and current draw - overdriving the PA can cause large
+current spikes and system resets.
+
+See `variants/nrf52840/diy/moonshine_NRF52/variant.h` for the same module
+wired with a more conservative power profile (`SX126X_MAX_POWER = 2`,
+~27 dBm output).
 
 ## Pin map
 
@@ -47,7 +58,7 @@ with the PA-safe power profile.
 | LORA_CS       | 8    |                                        |
 | LORA_SCK      | 10   |                                        |
 
-DIO2 drives the E22's TXEN pin internally (`SX126X_DIO2_AS_RF_SWITCH`), so
+DIO2 drives the module's TXEN pin internally (`SX126X_DIO2_AS_RF_SWITCH`), so
 `SX126X_TXEN` is left as `RADIOLIB_NC`. `SX126X_RXEN` is driven by GPIO2.
 
 ## Build & Flash
