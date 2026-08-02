@@ -13,6 +13,15 @@ DIY Meshtastic node variant based on an Ebyte nRF52840 MCU module and E22-400M33
 - **LED**: Bluetooth pairing status on P0.15 (`LED_PAIRING`). Solid on = BLE
   connected, slow blink = unpaired, fast blink = pairing, off after 30s idle.
 - **Battery ADC**: 0.5 voltage divider (equal resistors)
+- **Power button (P1.09) + self-hold latch (P0.05)**: the button supplies power
+  while pressed. Hold it 2s to power on - firmware then drives P0.05 HIGH to
+  latch the board on. Hold it 2s again to power off - the firmware saves the
+  NodeDB first, then drops P0.05 LOW; the board keeps running on button power
+  until the button is released. Low-battery cutoff (~3.2V) also drops the latch.
+  Implemented in a dedicated FreeRTOS task (`powerButtonTask` in variant.cpp) -
+  the nrf52 platform's weak `variant_shutdown`/`variant_nrf52LoopHook` hooks are
+  inlined away by LTO and cannot be used (see the `noinline` note in
+  `src/platform/nrf52/main-nrf52.cpp`).
 - **USB CDC serial**: enabled by default (nRF52840 built-in USB-ACM). Debug output
   and Meshtastic CLI communication go through the USB serial port.
 - **I2C**: SDA/SCL pins wired (P0.07/P0.12) but no I2C devices connected.
@@ -25,6 +34,8 @@ DIY Meshtastic node variant based on an Ebyte nRF52840 MCU module and E22-400M33
 | CHARGE_DET  | P0.13 | Active high (charging)             |
 | BUZZER      | P1.11 | PWM buzzer                         |
 | BATTERY_ADC | P0.03 | AIN1, 0.5 divider                  |
+| POWER_BTN   | P1.09 | Power button, active low (to GND)  |
+| POWER_LATCH | P0.05 | HIGH = keep board powered          |
 | IIC_SDA     | P0.07 | Wired, no device                   |
 | IIC_SCL     | P0.12 | Wired, no device                   |
 | SPI_MISO    | P0.26 |                                    |
@@ -35,6 +46,26 @@ DIY Meshtastic node variant based on an Ebyte nRF52840 MCU module and E22-400M33
 | LORA_BUSY   | P0.28 | AIN4 (AI4)                         |
 | LORA_RESET  | P1.10 |                                    |
 | LORA_RXEN   | P0.02 | MCU-controlled RXEN; TXEN via DIO2 |
+
+## Power button
+
+- **Power on**: press and hold the button ~2s. The `powerButtonTask` FreeRTOS
+  task detects P1.09 LOW for 2s, then drives P0.05 HIGH to latch the board on.
+- **Power off**: hold the button ~2s while running. The task saves the NodeDB
+  (`nodeDB->saveToDisk()`), then drops P0.05 LOW. The board keeps running on
+  button power until the button is released; releasing it cuts power. The
+  normal shutdown sequence (shutdown melody / SystemOff) is intentionally not
+  used - the task saves first and then just cuts the latch.
+- A release is required between power-on and arming power-off, so holding the
+  button through the power-on latch cannot shut the board down again.
+- If the board resets while latched (button released), P1.09 reads HIGH at boot
+  and `initVariant` re-latches P0.05 immediately - the board stays on through
+  crashes and soft resets.
+- **Low battery cutoff**: the task checks the battery every 10s and, if it reads
+  below 3.2V for 3 consecutive samples (and no USB power), saves the NodeDB and
+  drops the latch. The threshold is above the firmware's own 3.1V SDS trigger so
+  the latch is released before SystemOff could leave it engaged (SystemOff
+  retains the latch and would drain the battery).
 
 ## Build & Flash
 
@@ -106,6 +137,9 @@ openocd -f interface/cmsis-dap.cfg -f target/nrf52.cfg \
   the actual file produced by `pio run` or a shell glob.
 - USB CDC serial is available immediately after boot for debug output and the
   Meshtastic Python CLI (`meshtastic --noproto` / `meshtastic --info`).
+- During DFU flashing (bootloader reset), P0.05 is not driven, so the latch
+  relies on button power or the latch circuit's hold capacitance - hold the
+  power button during USB DFU if the board loses power mid-flash.
 - `MESHTASTIC_EXCLUDE_I2C=1` is set because no I2C devices are connected. Remove
   this flag from `platformio.ini` if an I2C display or sensor is added later.
 - No GPS, screen, accelerometer, magnetometer, or button is configured. Remove

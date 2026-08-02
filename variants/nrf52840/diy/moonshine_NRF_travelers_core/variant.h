@@ -24,6 +24,7 @@ MOONSHINE NRF TRAVELERS CORE PIN ASSIGNMENT (Ebyte nRF52840 + E22-400M33S)
 | P0.02 | LORA_RXEN   |        | P0.15 | LED         |
 | P0.03 | VBAT_ADC    |        | P0.26 | SPI_MISO    |
 | P0.04 | LORA_CS     |        | P0.28 | LORA_BUSY   |
+| P0.05 | POWER_LATCH |        | P1.09 | POWER_BTN   |
 | P0.06 | SPI_MOSI    |        | P1.10 | LORA_RESET  |
 | P0.07 | IIC_SDA     |        | P1.11 | BUZZER      |
 | P0.08 | SPI_SCK     |        | P1.13 | LORA_DIO1   |
@@ -75,6 +76,11 @@ MOONSHINE NRF TRAVELERS CORE PIN ASSIGNMENT (Ebyte nRF52840 + E22-400M33S)
 
 // Buzzer
 #define PIN_BUZZER (32 + 11) // P1.11
+
+// Power button + self-hold latch: the button (pulled to GND) supplies power while
+// pressed; firmware drives P0.05 HIGH after a 2s hold to keep the board powered.
+#define POWER_BUTTON_PIN (32 + 9) // P1.09 - LOW = pressed
+#define POWER_LATCH_PIN (0 + 5)   // P0.05 - HIGH = keep power on
 
 // UART interfaces - no physical serial ports wired
 #define PIN_SERIAL1_RX (-1)
