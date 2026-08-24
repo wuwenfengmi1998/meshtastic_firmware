@@ -1,5 +1,5 @@
-#ifndef _VARIANT_MOONSHINE_NRF52_EBYTE_
-#define _VARIANT_MOONSHINE_NRF52_EBYTE_
+#ifndef _VARIANT_MOONSHINE_NRF_TRAVELERS_CORE_
+#define _VARIANT_MOONSHINE_NRF_TRAVELERS_CORE_
 
 /** Master clock frequency */
 #define VARIANT_MCK (64000000ul)
@@ -17,18 +17,19 @@ extern "C" {
 #endif // __cplusplus
 
 /*
-MOONSHINE NRF52 EBYTE PIN ASSIGNMENT (Ebyte nRF52840 + E22-400M33S)
+MOONSHINE NRF TRAVELERS CORE PIN ASSIGNMENT (Ebyte nRF52840 + E22-400M33S)
 
 | Pin   | Function    |        | Pin   | Function    |
 | ----- | ----------- | ------ | ----- | ----------- |
-| P0.03 | VBAT_ADC    |        | P0.22 | SPI_MOSI    |
-| P0.04 | IIC_SCL     |        | P0.24 | BUTTON      |
-| P0.08 | IIC_SDA     |        | P0.28 | LORA_BUSY   |
-| P0.13 | CHAG_DET    |        | P1.00 | SPI_MISO    |
-| P0.15 | LED         |        | P1.09 | LORA_RXEN   |
-| P0.17 | LORA_CS     |        | P1.10 | LORA_DIO1   |
-| P0.20 | SPI_SCK     |        | P1.11 | BUZZER      |
-|       |             |        | P1.13 | LORA_RESET  |
+| P0.02 | LORA_RXEN   |        | P0.15 | LED         |
+| P0.03 | VBAT_ADC    |        | P0.26 | SPI_MISO    |
+| P0.04 | LORA_CS     |        | P0.28 | LORA_BUSY   |
+| P0.05 | POWER_LATCH |        | P1.09 | POWER_BTN   |
+| P0.06 | SPI_MOSI    |        | P1.10 | LORA_RESET  |
+| P0.07 | IIC_SDA     |        | P1.11 | BUZZER      |
+| P0.08 | SPI_SCK     |        | P1.13 | LORA_DIO1   |
+| P0.12 | IIC_SCL     |        |       |             |
+| P0.13 | CHAG_DET    |        |       |             |
 */
 
 // Number of pins defined in PinDescription array
@@ -62,22 +63,24 @@ MOONSHINE NRF52 EBYTE PIN ASSIGNMENT (Ebyte nRF52840 + E22-400M33S)
 // WIRE IC AND IIC PINS
 #define WIRE_INTERFACES_COUNT 1
 
-#define PIN_WIRE_SDA (0 + 8) // P0.08
-#define PIN_WIRE_SCL (0 + 4) // P0.04
+#define PIN_WIRE_SDA (0 + 7)  // P0.07
+#define PIN_WIRE_SCL (0 + 12) // P0.12
 
 // LED - Bluetooth pairing status indicator
 #define LED_PAIRING (0 + 15) // P0.15
 #define LED_STATE_ON 1       // State when LED is lit (active high)
 
-// Charge detection (P0.13, active high = charging, needs internal pull-down)
+// Charge detection (P0.13, active high = charging)
 #define EXT_CHRG_DETECT (0 + 13)
-#define EXT_CHRG_DETECT_MODE INPUT_PULLDOWN
+#define EXT_CHRG_DETECT_VALUE HIGH
 
 // Buzzer
 #define PIN_BUZZER (32 + 11) // P1.11
 
-// Button
-#define BUTTON_PIN (0 + 24) // P0.24
+// Power button + self-hold latch: the button (pulled to GND) supplies power while
+// pressed; firmware drives P0.05 HIGH after a 2s hold to keep the board powered.
+#define POWER_BUTTON_PIN (32 + 9) // P1.09 - LOW = pressed
+#define POWER_LATCH_PIN (0 + 5)   // P0.05 - HIGH = keep power on
 
 // UART interfaces - no physical serial ports wired
 #define PIN_SERIAL1_RX (-1)
@@ -94,14 +97,14 @@ MOONSHINE NRF52 EBYTE PIN ASSIGNMENT (Ebyte nRF52840 + E22-400M33S)
 // Serial interfaces
 #define SPI_INTERFACES_COUNT 1
 
-#define PIN_SPI_MISO (32 + 0) // P1.00
-#define PIN_SPI_MOSI (0 + 22) // P0.22
-#define PIN_SPI_SCK (0 + 20)  // P0.20
+#define PIN_SPI_MISO (0 + 26) // P0.26
+#define PIN_SPI_MOSI (0 + 6)  // P0.06
+#define PIN_SPI_SCK (0 + 8)   // P0.08
 
 #define LORA_MISO PIN_SPI_MISO
 #define LORA_MOSI PIN_SPI_MOSI
 #define LORA_SCK PIN_SPI_SCK
-#define LORA_CS (0 + 17) // P0.17
+#define LORA_CS (0 + 4) // P0.04
 
 // LORA MODULES
 #define USE_SX1268 // E22-400M33S uses SX1268 (433MHz)
@@ -113,16 +116,16 @@ MOONSHINE NRF52 EBYTE PIN ASSIGNMENT (Ebyte nRF52840 + E22-400M33S)
 #define TX_GAIN_LORA 12
 
 // SX126X CONFIG
-#define SX126X_CS (0 + 17)       // P0.17 FIXME - we really should define LORA_CS instead
-#define SX126X_DIO1 (32 + 10)    // P1.10 IRQ
+#define SX126X_CS (0 + 4)        // P0.04 FIXME - we really should define LORA_CS instead
+#define SX126X_DIO1 (32 + 13)    // P1.13 IRQ
 #define SX126X_DIO2_AS_RF_SWITCH // Note for E22 modules: DIO2 is not attached internally to TXEN for automatic TX/RX switching,
                                  // so it needs connecting externally if it is used in this way
 #define SX126X_BUSY (0 + 28)     // P0.28 (AIN4)
-#define SX126X_RESET (32 + 13)   // P1.13
-#define SX126X_RXEN (32 + 9)     // P1.09 - E22 RXEN, MCU controls RX/TX RF switch path
+#define SX126X_RESET (32 + 10)   // P1.10
+#define SX126X_RXEN (0 + 2)      // P0.02 - E22 RXEN, MCU controls RX/TX RF switch path
 #define SX126X_TXEN RADIOLIB_NC  // DIO2 controls TXEN directly
 
-#define SX126X_DIO3_TCXO_VOLTAGE 1.8
+#define SX126X_DIO3_TCXO_VOLTAGE 2.2
 #define TCXO_OPTIONAL // make it so that the firmware can try both TCXO and XTAL
 
 #ifdef __cplusplus
